@@ -1,0 +1,24 @@
+1 ti$="000000"
+10 dim e(200):dim n(2020):dim s(2020)
+11 for i=1 to 2020
+12 n(i)=0
+13 s(i)=0
+14 next
+15 s1=0:s2=0
+20 read e(1)
+30 for i=2 to 200
+31 print i
+40 read e(i)
+50 c=2020-e(i)
+60 if n(c)=1 then s1=c*e(i)
+70 n(e(i))=1
+75 if s(c) <> 0 then s2=s(c)*e(i)
+80 for j=1 to i-1
+90 if e(i)+e(j)<2020 then s(e(i)+e(j))=e(i)*e(j)
+100 next
+110 if s1<>0 and s2<>0 then goto 130
+120 next
+130 print "time: "ti$
+140 print "part 1: "s1
+150 print "part 2: "s2
+160 end
