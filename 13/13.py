@@ -41,9 +41,8 @@ def main():
 
   # part 2
 
-  bus_zero = buses.pop(0)
-  timestamp = (MINTIME // bus_zero) * bus_zero
-  step = bus_zero
+  timestamp = 0
+  step = 1
   iterations = 0
 
   for pos, id in buses.items():
