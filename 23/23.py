@@ -1,101 +1,128 @@
 #!/usr/bin/python3
 
-import fileinput
-
 # sample input
 
 INPUT = "389125467"
 
 # real input
 
-# INPUT = "624397158"
+INPUT = "624397158"
 
 class Cups:
 
-  def __init__(self, input_, verbose = False):
+  def __init__(self, input_, ncups = None, verbose = False):
 
-    self.current = 0
-    self.cups = []
+    self.nextcup = {}
     self.verbose = verbose
+    self.move_ = 0
 
-    for char in input_:
-      self.cups.append(int(char)-1)
+    cups = [int(char) - 1 for char in input_]
 
-    self.max = max(self.cups) + 1
+    self.current = first = cups[0]
+    last = cups[-1]
 
-  def __str__(self):
+    for i in range(len(cups)):
 
-    str_ = [str(i+1) for i in self.cups]
-    str_[self.current] = "({})".format(str_[self.current])
+      self.nextcup[cups[i]] = cups[(i+1) % len(cups)]
 
-    return " ".join(str_)
+    self.max = max(cups) + 1
+
+    if ncups is not None:
+
+      self.nextcup[ncups - 1] = first
+      self.nextcup[last] = self.max
+      self.max = ncups
+
+  def __repr__(self):
+
+    str_ = "cups: ({})".format(self.current + 1)
+
+    key = self.nextcup[self.current]
+
+    while key in self.nextcup and key != self.current:
+
+      str_ += " {}".format(str(key + 1))
+
+      key = self.nextcup[key]
+
+    return str_
     
-  def fillup(self, maximum):
+  def next(self, start):
 
-    for i in range(max(self.cups)+1, maximum):
-
-      self.cups.append(i)
-
-    self.max = maximum
+    return self.nextcup.get(start, start + 1)
 
   def move(self):
 
-    current = self.current
-    aux = self.cups[current:]+self.cups[:current]
+    if self.verbose:
 
-    picked = aux[1:4]
-    remainder = aux[4:]
+      self.move_ += 1
 
-    destination = (aux[0] - 1) % self.max
+      print("\n-- move {} --".format(self.move_))
+      print(self)
 
-    while not destination in remainder:
+    picked = [self.next(self.current)]
+
+    for i in range(2):
+
+      picked.append(self.next(picked[-1]))
+
+    self.nextcup[self.current] = self.next(picked[-1])
+
+    destination = (self.current - 1) % self.max
+
+    while destination in picked:
 
       destination = (destination - 1) % self.max
 
     if self.verbose:
     
-      print("cups:  {}".format(str(self)))
       print("pick up: {}".format(", ".join([str(i+1) for i in picked])))
       print("destination: {}".format(str(destination+1)))
 
-    index = remainder.index(destination) + 1
+    self.nextcup[picked[-1]] = self.next(destination)
+    self.nextcup[destination] = picked[0]
 
-    cups = aux[:1] + remainder[:index] + picked + remainder[index:]
-
-    self.cups = cups[-current:] + cups[:-current]
-
-    self.current = (current + 1) % len(self.cups)
+    self.current = self.next(self.current)
 
   def labels(self):
 
-    start = self.cups.index(0)
+    start = self.nextcup[0]
 
-    return "".join(str(i+1) for i in self.cups[start+1:]+self.cups[:start])
+    labels = ""
+
+    while start != 0:
+
+      labels += str(start + 1)
+      start = self.nextcup[start]
+
+    return labels
 
 
 def main():
   
-  cups = Cups(INPUT)
+  cups = Cups(INPUT, verbose = True)
 
   for i in range(100):
 
     cups.move()
 
+  print("\n-- final --")
+  print(cups)
+
+  print()
+
   print(cups.labels())
 
-  return True
+#  return True
 
-  cups = Cups(INPUT)
-
-  cups.fillup(1000000)
+  cups = Cups(INPUT, ncups = 1000000)
 
   for i in range(10000000):
 
     cups.move()
 
-  i = cups.cups.index(0)
-  c1 = cups.cups[i+1]
-  c2 = cups.cups[i+2]
+  c1 = cups.next(0) + 1
+  c2 = cups.next(c1 - 1) + 1
 
   print(c1)
   print(c2)
