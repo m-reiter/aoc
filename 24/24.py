@@ -39,15 +39,17 @@ class Tiles:
 
   def __init__(self):
 
-    self.tiles = defaultdict(lambda: defaultdict(bool))
+    self.tiles = defaultdict(bool)
+
+    self.day = 0
 
   def __getitem__(self, point):
 
-    return self.tiles[point.x][point.y]
+    return self.tiles[point]
 
   def __setitem__(self, point, value):
 
-    self.tiles[point.x][point.y] = value
+    self.tiles[point] = value
 
   def parseline(self, line):
 
@@ -63,7 +65,38 @@ class Tiles:
 
   def count_blacks(self):
 
-    return sum(sum(x.values()) for x in self.tiles.values())
+    return sum(x for x in self.tiles.values())
+
+  def pass_day(self, verbose = False):
+
+    self.day += 1
+
+    neighbor_count = defaultdict(int)
+
+    for point in self.tiles:
+
+      if self[point]:
+
+        for neighbor in NEIGHBORS.values():
+
+          neighbor_count[point + neighbor] += 1
+
+    for black in [x for x in self.tiles if self[x]]:
+
+      if not 0 < neighbor_count[black] <= 2:
+
+        self[black] = False
+
+    for white in [x for x,y in neighbor_count.items() if y == 2 and not self[x]]:
+
+      self[white] = True
+
+    if verbose and self.day < 10 or self.day % 10 == 0:
+
+      print("Day {}: {}".format(self.day, self.count_blacks()))
+
+      if self.day == 10: print()
+    
 
 def main():
   
@@ -74,6 +107,10 @@ def main():
     tiles.parseline(line.strip())
 
   print(tiles.count_blacks())
+
+  for i in range(100):
+
+    tiles.pass_day(verbose = True)
 
 if __name__ == "__main__":
   main()
