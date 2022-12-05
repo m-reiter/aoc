@@ -16,7 +16,6 @@ def part1(rucksacks):
 def part2(rucksacks):
   sum = 0
   for group in chunked(rucksacks, 3):
-    #items = set.intersection(*[set(a + b) for a,b in rucksacks]) 
     items = [set(a + b) for a,b in group]
     sum += get_priority(set.intersection(*items).pop())
   return sum
