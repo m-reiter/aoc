@@ -8,13 +8,17 @@ from P import P
 
 PATTERN = re.compile("Sensor at x=(-?\d+), y=(-?\d+): closest beacon is at x=(-?\d+), y=(-?\d+)")
 
-class Range():
+class Range:
   
-  def __init__(self):
+  def __init__(self,limit = None):
     self.ranges = []
+    self.limit = limit
 
   def add(self,newrange):
-    self.ranges.append(newrange)
+    if self.limit is not None:
+      self.ranges.append((min(0,newrange[0]),max(self.limit,newrange[1])))
+    else:
+      self.ranges.append(newrange)
 
   def consolidate(self):
     start = None
@@ -36,7 +40,9 @@ class Range():
     return sum(x[1]-x[0]+1 for x in self.ranges)
 
   def has_gap(self):
-    return len(self.ranges) > 1
+    gap = len(self.ranges) > 1
+    if self.limit is not None:
+      gap = gap or self.ranges[0][0] > 0 or self.ranges[-1][1] < self.limit
 
 def manhattan(p1,p2):
   return abs(p1.x-p2.x)+abs(p1.y-p2.y)
@@ -49,7 +55,7 @@ def dimensions(cave):
   return xmin,xmax,ymin,ymax
 
 def read_data():
-  cave = defaultdict(Range)
+  cave = defaultdict(lambda : Range(limit=2000000))
   sensors = []
   beacons = set()
   for x_sensor,y_sensor,x_beacon,y_beacon in [list(map(int,PATTERN.match(line).groups())) for line in fileinput.input()]:

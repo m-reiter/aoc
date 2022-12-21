@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 import fileinput
-from itertools import cycle
+from more_itertools import pairwise
 from collections import UserDict
 
 from P import P
@@ -33,6 +33,21 @@ WALL = "|"
 FLOOR = "-"
 CORNER = "+"
 
+class Cycle:
+  def __init__(self,data):
+    self.position = -1
+    self.data = data
+
+  def __iter__(self):
+    return self
+
+  def __next__(self):
+    self.position = (self.position + 1) % len(self)
+    return self.data[self.position]
+
+  def __len__(self):
+    return len(self.data)
+
 class Rock(UserDict):
   
   def __init__(self,pattern):
@@ -44,16 +59,16 @@ class Rock(UserDict):
     self.height = max(key.y for key in self.keys())+1
 
   def bottom(self,x):
-    return min(key.y for key in self.keys() if key.x == x)
+    return min(key.y for key in self.keys() if self[key] and key.x == x)
 
   def top(self,x):
-    return max(key.y for key in self.keys() if key.x == x)
+    return max(key.y for key in self.keys() if self[key] and key.x == x)
 
   def left(self,y):
-    return min(key.x for key in self.keys() if key.y == y)
+    return min(key.x for key in self.keys() if self[key] and key.y == y)
 
   def right(self,y):
-    return max(key.x for key in self.keys() if key.y == y)
+    return max(key.x for key in self.keys() if self[key] and key.y == y)
 
   def __repr__(self):
     lines = []
@@ -85,6 +100,12 @@ class Cave(UserDict):
         return FLOOR
       else:
         return EMPTY
+
+  def top_shape(self):
+    tops = [max((key.y for key in self.keys() if key.x == x),default=0) for x in range(self.width)]
+    start = min(tops)
+    top_shape = set(key-P(0,start) for key in self.keys() if key.y >= start)
+    return top_shape
 
   def add_rock(self,rocks,jets):
     if DEBUG: print("adding rock")
@@ -133,11 +154,37 @@ def parse_rocks():
 
 def part1(rocks,jets):
   cave = Cave()
-  rocks = cycle(rocks)
-  jets = cycle(jets)
+  rocks = Cycle(rocks)
+  jets = Cycle(jets)
   for _ in range(2022):
     cave.add_rock(rocks,jets)
   print(cave)
+  return cave.height
+
+def part2(rocks,jets):
+  cave = Cave()
+  rocks = Cycle(rocks)
+  jets = Cycle(jets)
+  top_shapes = {}
+  fallen = 0
+  while True:
+    cave.add_rock(rocks,jets)
+    fallen += 1
+    top_shape = cave.top_shape()
+    top_shape.add((rocks.position,jets.position))
+    top_shape = tuple(top_shape)
+    if top_shape in top_shapes.keys():
+      height_before,fallen_before = top_shapes[top_shape]
+      height_gain = cave.height - height_before
+      period = fallen - fallen_before
+      moves_left = 1000000000000 - fallen
+      periods = moves_left // period
+      for _ in range(moves_left % period):
+        cave.add_rock(rocks,jets)
+      print(cave)
+      return cave.height + periods * height_gain
+    else:
+      top_shapes[top_shape] = (cave.height,fallen)
   return cave.height
 
 def main():
@@ -145,6 +192,7 @@ def main():
   jets = fileinput.FileInput().readline().strip()
 
   print(part1(rocks,jets))
+  print(part2(rocks,jets))
 
 if __name__ == "__main__":
   main()
