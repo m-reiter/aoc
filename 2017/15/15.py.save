@@ -1,0 +1,48 @@
+#!/usr/bin/python3
+
+DIVISOR = 2147483647
+FACTORS = 16807, 48271
+
+STARTING_VALUES = 65, 8921
+
+class Generators():
+
+  def __init__(self,starting_values, factors = (16807, 48271)):
+    self.starting_values = starting_values
+    self.factors = factors
+    self.values = []
+    self.judge = 0
+
+  def generate(self):
+    try:
+      previous = self.values[-1]
+    except IndexError:
+      previous = self.starting_values
+    self.values.append(tuple(value * factor % DIVISOR for value,factor in zip(previous,self.factors)))
+    self.judge += len(set(map(lambda x: x & (2**16 - 1), self.values[-1]))) == 1
+
+def main():
+  generators = Generators((65,8921))
+  generators = Generators((703,516))
+  print("--Gen. A--  --Gen. B--")
+  for _ in range(5):
+    generators.generate()
+    print("{:10d}  {:10d}".format(*generators.values[-1]))
+  print("[",end="",flush=True)
+  for _ in range(100000-5):
+    generators.generate()
+  print(".",end="",flush=True)
+  for _ in range(398):
+    for _ in range(100000):
+      generators.generate()
+    print(".",end="",flush=True)
+  for _ in range(100000-5):
+    generators.generate()
+  print("]")
+  for _ in range(5):
+    generators.generate()
+    print("{:10d}  {:10d}".format(*generators.values[-1]))
+  print(generators.judge)
+
+if __name__ == "__main__":
+  main()
