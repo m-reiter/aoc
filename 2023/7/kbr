@@ -1,0 +1,105 @@
+#!/usr/bin/python3
+import collections
+
+
+SYMBOL_VALUES = {"A": 14, "K": 13, "Q": 12, "J": 1, "T": 10}
+QUINDECIM_BASE = 15
+FNAME = "input"
+
+
+class Card:
+
+    def __init__(self, symbol):
+        self.symbol = symbol
+        self.value = int(SYMBOL_VALUES.get(symbol, symbol))
+
+    def __repr__(self):
+        return f"Card({self.symbol})"
+
+
+class Hand:
+
+    def __init__(self, symbols, bid):
+        self.symbols = symbols
+        self.bid = int(bid)
+        self.cards = [Card(symbol) for symbol in symbols]
+        self._value = None
+        self._kind = None
+
+    @property
+    def value(self):
+        if self._value is None:
+            self._value = sum(
+                card.value * QUINDECIM_BASE ** i
+                for i, card in enumerate(reversed(self.cards))
+            )
+        return self._value
+
+    @property
+    def kind(self):
+        if self._kind is None:
+            c = collections.Counter(self.symbols)
+            v = sorted(c.values(), reverse=True)
+            match v:
+                case [5]:  # cheat poker
+                    value = 6
+                case [4, 1]:  # poker
+                    value = 5
+                case [3, 2]:  # full house
+                    value = 4
+                case [3, 1, 1]:  # triple
+                    value = 3
+                case [2, 2, 1]:  # two pairs
+                    value = 2
+                case [2, 1, 1, 1]:  # single pair
+                    value = 1
+                case _:
+                    value = 0
+            self._kind = self._adjust_for_jokers(value)
+        return self._kind
+
+    def _adjust_for_jokers(self, value):
+        jokers = self.symbols.count("J")
+        if jokers:
+            if value % 2:
+                value += 2
+            else:
+                if value <= 2:
+                    value += 1
+                if value > 2:
+                    value += jokers
+        return min(value, 6)
+
+    def __lt__(self, other):
+        if self.kind < other.kind:
+            return True
+        if self.kind > other.kind:
+            return False
+        return self.value < other.value
+
+    def __str__(self):
+        return f"symbols:{self.symbols}\nkind:{self.kind}\nbid:{self.bid}\nvalue:{self.value}\n"
+
+class HandSet:
+
+    def __init__(self):
+        self.hands = []
+
+    def __repr__(self):
+        return "\n".join(str(hand) for hand in self.hands)
+
+    def get_total_winnings(self):
+        return sum(
+            hand.bid * rank for rank, hand in
+            enumerate(sorted(self.hands), 1)
+        )
+
+    def parse(self, fname):
+        with open(fname) as fobj:
+            for line in fobj:
+                self.hands.append(Hand(*line.split()))
+
+
+hand_set = HandSet()
+hand_set.parse(FNAME)
+print(hand_set.get_total_winnings())

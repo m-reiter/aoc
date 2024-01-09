@@ -1,0 +1,148 @@
+#!/usr/bin/python3
+
+import fileinput
+import re
+
+from collections import defaultdict
+from more_itertools import chunked, pairwise
+
+from P import P
+
+PLAN = re.compile("([UDLR]) (\d+) \(#(\w{5})(\w)\)")
+
+CUBE = "#"
+EMPTY = "."
+
+DIRECTIONS = {
+  "U": P(0, -1),
+  "D": P(0, 1),
+  "L": P(-1, 0),
+  "R": P(1, 0)
+}
+INT_TO_DIRECTION = "RDLU"
+
+class Horizontal:
+  def __init__(self, start, end):
+    self.start = start
+    self.end = end
+    self.crossing = None
+
+  def __repr__(self):
+    return "<{}Horizontal ({},{})>".format("Crossing " if self.crossing else "", self.start, self.end)
+
+  def __len__(self):
+    return self.end - self.start + 1
+
+class Vertical:
+  def __init__(self, direction, position, start, end):
+    self.direction = direction
+    self.position = position
+    self.start = start
+    self.end = end
+
+  def __repr__(self):
+    return "<Vertical at column {} ({},{})>".format(self.position, self.start, self.end)
+
+class Dig():
+  def __init__(self):
+    self.minx = self.maxx = self.miny = self.maxy = 0
+    self.changes = { 0 }
+    self.horizontals = defaultdict(list)
+    self.verticals = []
+
+  @classmethod
+  def from_input(cls, corrected = False):
+    dig = cls()
+
+    position = P(0, 0)
+    horizontals = []
+    previous_vertical = None
+
+    for line in fileinput.input():
+      direction, length, hexlength, hexdirection = PLAN.match(line).groups()
+
+      if corrected:
+        direction = INT_TO_DIRECTION[int(hexdirection)]
+        length = int(hexlength, 16)
+      else:
+        length = int(length)
+
+      new_position = position + DIRECTIONS[direction] * length
+      
+      if direction in "UD": # vertical
+        start, end = sorted(p.y for p in (position, new_position))
+
+        dig.verticals.append(Vertical(direction, position.x, start, end))
+        dig.changes.add(new_position.y)
+
+        if previous_vertical:
+          horizontals[-1][1].crossing = direction == previous_vertical
+
+        previous_vertical = direction
+
+      else: # horizontal
+        start, end = sorted(p.x for p in (position, new_position))
+
+        horizontals.append((position.y, Horizontal(start, end)))
+
+      position = new_position
+    
+    if horizontals[0][1].crossing is None: # first line was horizontal
+      missing = horizontals[0][1]
+    else:
+      missing = horizontals[-1][1]
+
+    missing.crossing = dig.verticals[0].direction == dig.verticals[-1].direction
+
+    for y, horizontal in horizontals:
+      dig.horizontals[y].append(horizontal)
+
+    return dig
+
+  def line_volume(self, y):
+    #volume = sum(len(h) for h in self.horizontals[y])
+#    print(volume)
+
+    volume = sum(v.start <= y <= v.end for v in self.verticals)
+#    print(volume)
+    volume = 0
+
+    crossings = { (v.position, v.position) for v in self.verticals if v.start < y < v.end }
+#    print(crossings)
+
+    crossings = crossings.union((h.end, h.start) for h in self.horizontals[y] if h.crossing)
+    crossings = crossings.union((h.start, h.start) for h in self.horizontals[y] if not h.crossing)
+    crossings = crossings.union((h.end, h.end) for h in self.horizontals[y] if not h.crossing)
+#    print(crossings)
+
+    assert len(crossings) % 2 == 0
+
+    for entrance, exit in chunked(sorted(crossings), 2):
+#      print(entrance, exit)
+      volume += exit[0] - entrance[1] - 1
+
+    return volume
+
+  def total_volume(self):
+    volume = self.line_volume(min(self.changes))
+
+    for start, end in pairwise(sorted(self.changes)):
+      volume += self.line_volume(start + 1) * (end - start - 1)
+      volume += self.line_volume(end)
+
+    return volume
+
+def main():
+  return
+  dig = Dig.from_input()
+
+  # part 1
+  print(dig)
+  print()
+  dig.fill()
+  print(dig)
+  print()
+  print(len(dig))
+
+if __name__ == "__main__":
+  main()

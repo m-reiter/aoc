@@ -1,0 +1,16 @@
+%bk -> zg
+%bn -> fz
+broadcaster -> gb
+%cd -> th
+%fx -> th, bn
+%fz -> bk, th
+%gb -> fx, th
+%mj -> th, sq
+%pq -> th, mj
+%sq -> th, cd
+&th -> bn, gb, tt, hf, bk
+%tt -> pq
+%zg -> th, zq
+%zq -> tt, th
+&hf -> mg
+&mg -> rx
