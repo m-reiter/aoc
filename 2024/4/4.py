@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import fileinput
+from collections import defaultdict
 
 from P import P
 
@@ -25,17 +26,17 @@ class Grid:
       return self._lines[pos.y][pos.x]
     return EMPTY
 
-  def find_word(self, word):
-    directions = [[offset * i for i in range(1, len(word))] for offset in P.offsets()]
+  def find_word(self, word, offsets):
+    directions = [[offset * i for i in range(1, len(word))] for offset in offsets]
 
-    found = []
+    found = defaultdict(int)
     
     for x in range(self.width):
       for y in range(self.height):
         if self[P(x,y)] == word[0]:
           for direction in directions:
             if "".join(self[P(x,y) + offset] for offset in direction) == word[1:]:
-              found.append((P[x,y], direction[0]))
+              found[P(x,y) + direction[0]] += 1
 
     return found
 
@@ -43,7 +44,13 @@ def main():
   grid = Grid(fileinput.input())
 
   # part 1
-  print(len(grid.find_word("XMAS")))
+  print(sum(grid.find_word("XMAS", P.offsets()).values()))
+
+  # part 2
+  # diagonal directions only for X-MASes
+  offsets = [P(x,y) for x in (-1,1) for y in (-1,1)]
+  #print(grid.find_word("MAS", offsets))
+  print(len([x for x in grid.find_word("MAS", offsets).values() if x == 2]))
 
 if __name__ == "__main__":
   main()
