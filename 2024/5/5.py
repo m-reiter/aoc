@@ -45,6 +45,5 @@ def main():
   corrected = [sorted(update, key = cmp_to_key(lambda a,b: cmp(a, b, rules))) for update in invalid]
   print(sum(map(get_middle, corrected)))
 
-
 if __name__ == "__main__":
   main()
