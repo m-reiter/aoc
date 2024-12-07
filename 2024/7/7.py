@@ -9,6 +9,9 @@ def add(a, b):
 def multiply(a, b):
   return a * b
 
+def concatenate(a, b):
+  return int(str(a) + str(b))
+
 def parse_line(line):
   result, operands = line.split(":")
 
@@ -20,9 +23,9 @@ def parse_line(line):
 def get_input():
   return [parse_line(line) for line in fileinput.input()]
 
-def validate(equation):
+def validate(equation, operations = (add, multiply)):
   result, operands = equation
-  calculations = product((add, multiply), repeat = len(operands) - 1)
+  calculations = product(operations, repeat = len(operands) - 1)
   correct = 0
 
   for calculation in calculations:
@@ -39,6 +42,9 @@ def main():
 
   # part 1
   print(sum(equation[0] for equation in equations if validate(equation)))
+
+  # part 2
+  print(sum(equation[0] for equation in equations if validate(equation, operations = (add, multiply, concatenate))))
 
 if __name__ == "__main__":
   main()
