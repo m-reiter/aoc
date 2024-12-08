@@ -16,8 +16,8 @@ class Map:
         if symbol != EMPTY:
           self.antennas[symbol].append(P(x,y))
 
-    self.width = x
-    self.height = y
+    self.width = x + 1
+    self.height = y + 1
 
   def __contains__(self, point):
     return (0 <= point.x < self.width and
@@ -26,12 +26,12 @@ class Map:
   def find_antinodes(self):
     for coordinates in self.antennas.values():
       for a, b in combinations(coordinates, 2):
-        offset = b - a
-        for point in (a - offset, b + offset):
+        offset = -1 * a + b
+        for point in (-1 * offset + a, b + offset):
           if point in self:
             self.antinodes.add(point)
 
-def main:
+def main():
   area_map = Map(fileinput.input())
 
   # part 1
@@ -40,4 +40,3 @@ def main:
 
 if __name__ == "__main__":
   main()
-
