@@ -23,19 +23,30 @@ class Map:
     return (0 <= point.x < self.width and
             0 <= point.y < self.height)
 
-  def find_antinodes(self):
+  def find_antinodes(self, resonance = False):
     for coordinates in self.antennas.values():
       for a, b in combinations(coordinates, 2):
         offset = -1 * a + b
-        for point in (-1 * offset + a, b + offset):
-          if point in self:
-            self.antinodes.add(point)
+        if resonance:
+          for direction in (-1, 1):
+            i= 0
+            while (point := a + i * offset) in self:
+              self.antinodes.add(point)
+              i += direction
+        else:
+          for point in (-1 * offset + a, b + offset):
+            if point in self:
+              self.antinodes.add(point)
 
 def main():
   area_map = Map(fileinput.input())
 
   # part 1
   area_map.find_antinodes()
+  print(len(area_map.antinodes))
+
+  # part 2
+  area_map.find_antinodes(resonance = True)
   print(len(area_map.antinodes))
 
 if __name__ == "__main__":
