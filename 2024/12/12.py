@@ -27,14 +27,13 @@ class Garden:
       for x, plant in enumerate(line.strip()):
         self.plots[P(x,y)] = plant
 
-    self.borders = P(x,y)
     self.regions = []
 
   def find_regions(self):
     unhandled = set(self.plots)
 
     while unhandled:
-      area = set()
+      region = set()
       perimeter = 0
       sides = 0
       side_segments = set()
@@ -43,10 +42,10 @@ class Garden:
       new = { seed }
       while new:
         plot = new.pop()
-        area.add(plot)
+        region.add(plot)
         for neighbor in plot.get_neighbors(diagonals = False):
           if self.plots[neighbor] == plant:
-            if neighbor not in area:
+            if neighbor not in region:
               new.add(neighbor)
               unhandled.discard(neighbor)
           else:
@@ -60,7 +59,7 @@ class Garden:
                        and self.plots[(n := neighbor + offset * direction)] != plant):
                   side_segments.add((p, n))
                   offset += 1
-      self.regions.append((area, perimeter, sides))
+      self.regions.append((region, perimeter, sides))
 
 def main():
   garden = Garden(fileinput.input())
