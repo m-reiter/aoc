@@ -19,6 +19,10 @@ class P(tuple):
 
     return P(*(s + o for s,o in zip(self, other)))
 
+  def __sub__(self, other):
+
+    return P(*(s - o for s,o in zip(self, other)))
+
   def __mul__(self, integer):
 
     return P(*(s * integer for s in self))
