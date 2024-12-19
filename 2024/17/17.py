@@ -15,16 +15,24 @@ COMBO_TO_REGISTER = {
 def is_blank(line):
   return not(line.strip())
 
+def red(s):
+  return "\033[31m"+str(s)+"\033[0m"
+
 class Computer:
   def __init__(self, registers, program):
     self.registers = {}
     for line in registers:
       register, value = REGISTER.match(line).groups()
       self.registers[register] = int(value)
-    print(program)
     self.program = list(map(int, program[0].split(": ")[1].split(",")))
     self.pc = 0
     self.prefix = ''
+
+  def __str__(self):
+    s = "\n".join(f"Register {k}: {v}" for k,v in self.registers.items())
+    s += "\n\nProgram: "
+    s += ",".join(f"{byte}" if self.pc != i else red(byte) for i,byte in enumerate(self.program))
+    return s
 
   def literal(self):
     return self.program[self.pc + 1]
@@ -46,7 +54,7 @@ class Computer:
   cdv = lambda self: Computer.xdv(self, 'C')
 
   def bxl(self):
-    self.registers['B'] = self.registers['B'] | self.literal()
+    self.registers['B'] = self.registers['B'] ^ self.literal()
     return False
 
   def bst(self):
@@ -60,11 +68,11 @@ class Computer:
     return True
 
   def bxc(self):
-    self.registers['B'] = self.registers['B'] | self.registers['C']
+    self.registers['B'] = self.registers['B'] ^ self.registers['C']
     return False
 
   def out(self):
-    print(f"{self.prefix}{self.combo()}")
+    print(f"{self.prefix}{self.combo() % 8}", end='')
     self.prefix = ','
     return False
 
@@ -83,12 +91,28 @@ class Computer:
     if not Computer.OPCODE_TO_INSTRUCTION[self.program[self.pc]](self):
       self.pc += 2
 
+  def run(self, verbose = False):
+    if verbose:
+      print(f"{self}\n")
+    while True:
+      try:
+        self.step()
+        if verbose:
+          print(f"{self}\n")
+      except IndexError:
+        if self.prefix:
+          print()
+        return
+
 def read_input():
   registers, programs = split_at(fileinput.input(), is_blank)
   return Computer(registers, programs)
     
 def main():
-  pass
+  computer = read_input()
+
+  # part 1
+  computer.run(verbose = False)
 
 if __name__ == "__main__":
   main()
