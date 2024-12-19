@@ -24,6 +24,7 @@ class Computer:
     print(program)
     self.program = list(map(int, program[0].split(": ")[1].split(",")))
     self.pc = 0
+    self.prefix = ''
 
   def literal(self):
     return self.program[self.pc + 1]
@@ -43,6 +44,42 @@ class Computer:
   adv = lambda self: Computer.xdv(self, 'A')
   bdv = lambda self: Computer.xdv(self, 'B')
   cdv = lambda self: Computer.xdv(self, 'C')
+
+  def bxl(self):
+    self.registers['B'] = self.registers['B'] | self.literal()
+    return False
+
+  def bst(self):
+    self.registers['B'] = self.combo() % 8
+    return False
+
+  def jnz(self):
+    if self.registers['A'] == 0:
+      return False
+    self.pc = self.literal()
+    return True
+
+  def bxc(self):
+    self.registers['B'] = self.registers['B'] | self.registers['C']
+    return False
+
+  def out(self):
+    print(f"{self.prefix}{self.combo()}")
+    self.prefix = ','
+    return False
+
+  OPCODE_TO_INSTRUCTION = {
+    0: Computer.adv,
+    1: Computer.bxl,
+    2: Computer.bst,
+    3: Computer.jnz,
+    4: Computer.bxc,
+    5: Computer.out,
+    6: Computer.bdv,
+    7: Computer.cdv
+  }
+
+  def step(self):
 
 def read_input():
   registers, programs = split_at(fileinput.input(), is_blank)
