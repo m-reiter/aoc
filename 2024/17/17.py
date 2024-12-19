@@ -69,17 +69,19 @@ class Computer:
     return False
 
   OPCODE_TO_INSTRUCTION = {
-    0: Computer.adv,
-    1: Computer.bxl,
-    2: Computer.bst,
-    3: Computer.jnz,
-    4: Computer.bxc,
-    5: Computer.out,
-    6: Computer.bdv,
-    7: Computer.cdv
+    0: adv,
+    1: bxl,
+    2: bst,
+    3: jnz,
+    4: bxc,
+    5: out,
+    6: bdv,
+    7: cdv
   }
 
   def step(self):
+    if not Computer.OPCODE_TO_INSTRUCTION[self.program[self.pc]](self):
+      self.pc += 2
 
 def read_input():
   registers, programs = split_at(fileinput.input(), is_blank)
