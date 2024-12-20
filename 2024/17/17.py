@@ -3,6 +3,7 @@
 import fileinput
 import re
 from more_itertools import split_at
+from enum import Flag, auto
 
 REGISTER = re.compile("Register (.): (\d+)")
 
@@ -18,6 +19,11 @@ def is_blank(line):
 def red(s):
   return "\033[31m"+str(s)+"\033[0m"
 
+class OutputMode(Flag):
+  NORMAL = auto()
+  COLLECT = auto()
+  CHECK = auto()
+
 class Computer:
   def __init__(self, registers, program):
     self.initial = {}
@@ -25,14 +31,17 @@ class Computer:
       register, value = REGISTER.match(line).groups()
       self.initial[register] = int(value)
     self.program = list(map(int, program[0].split(": ")[1].split(",")))
-    self.silent = False
+    self.outputmode = OutputMode.NORMAL
     self.reset()
 
-  def reset(self):
+  def reset(self, a = None):
     self.registers = self.initial.copy()
+    if a is not None:
+      self.registers['A'] = a
     self.pc = 0
     self.prefix = ''
-    self.output = ''
+    self.output = []
+    self.output_position = 0
 
   def __str__(self):
     s = "\n".join(f"Register {k}: {v}" for k,v in self.registers.items())
@@ -78,12 +87,16 @@ class Computer:
     return False
 
   def out(self):
-    out = f"{self.prefix}{self.combo() % 8}"
-    if self.silent:
-      self.output += out
-    else:
-      print(out, end='')
-    self.prefix = ','
+    out = self.combo() % 8
+    if self.outputmode & OutputMode.CHECK:
+      if out != self.program[self.output_position]:
+        raise ValueError
+      self.output_position += 1
+    if self.outputmode & OutputMode.NORMAL:
+      print(f"{self.prefix}{out}", end='')
+      self.prefix = ','
+    if self.outputmode & OutputMode.COLLECT:
+      self.output.append(out)
     return False
 
   OPCODE_TO_INSTRUCTION = {
@@ -110,30 +123,44 @@ class Computer:
         if verbose:
           print(f"{self}\n")
       except IndexError:
-        if self.prefix and not self.silent:
+        if self.prefix and (self.outputmode & OutputMode.NORMAL):
           print()
         return
 
   def correct(self):
-    a = 281474976710656
-    step = a // 2
-    a = 281474975710640
-    self.silent = True
-    direction = -1
+    a = 0
+    step = 2 ** 64
+    self.outputmode = OutputMode.COLLECT | OutputMode.NORMAL
+    direction = 1
+    l = len(self.program) + 0
     while True:
-      print(a, step)
-      a += 1 # direction * step
-      self.reset()
-      self.registers['A'] = a
-      self.run()
-      if len(self.output.split(",")) > len(self.program):
-        direction = -1
-      else:
-        direction = 1
-      if self.output == ",".join(map(str, self.program)):
-        return a
-      step = step // 2
-      #a -= 1
+      self.reset(a = a)
+      self.run(verbose = False)
+      if direction * len(self.output) > direction * l:
+        direction *= -1
+      step //= 2
+      if step == 1:
+        break
+      a += direction * step
+    self.outputmode = OutputMode.CHECK
+    print(self.program)
+    a = a - 2
+    while True:
+      a += 1
+      if a % 100000 == 0:
+        print(a)
+      self.reset(a = a)
+      try:
+        self.run()
+      except ValueError:
+        next
+      if self.output_position == l:
+        break
+    self.reset(a = a)
+    self.outputmode = OutputMode.NORMAL
+    print(self)
+    self.run()
+    return a
 
 def read_input():
   registers, programs = split_at(fileinput.input(), is_blank)
