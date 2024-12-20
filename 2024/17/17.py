@@ -20,13 +20,19 @@ def red(s):
 
 class Computer:
   def __init__(self, registers, program):
-    self.registers = {}
+    self.initial = {}
     for line in registers:
       register, value = REGISTER.match(line).groups()
-      self.registers[register] = int(value)
+      self.initial[register] = int(value)
     self.program = list(map(int, program[0].split(": ")[1].split(",")))
+    self.silent = False
+    self.reset()
+
+  def reset(self):
+    self.registers = self.initial.copy()
     self.pc = 0
     self.prefix = ''
+    self.output = ''
 
   def __str__(self):
     s = "\n".join(f"Register {k}: {v}" for k,v in self.registers.items())
@@ -72,7 +78,11 @@ class Computer:
     return False
 
   def out(self):
-    print(f"{self.prefix}{self.combo() % 8}", end='')
+    out = f"{self.prefix}{self.combo() % 8}"
+    if self.silent:
+      self.output += out
+    else:
+      print(out, end='')
     self.prefix = ','
     return False
 
@@ -100,9 +110,30 @@ class Computer:
         if verbose:
           print(f"{self}\n")
       except IndexError:
-        if self.prefix:
+        if self.prefix and not self.silent:
           print()
         return
+
+  def correct(self):
+    a = 281474976710656
+    step = a // 2
+    a = 281474975710640
+    self.silent = True
+    direction = -1
+    while True:
+      print(a, step)
+      a += 1 # direction * step
+      self.reset()
+      self.registers['A'] = a
+      self.run()
+      if len(self.output.split(",")) > len(self.program):
+        direction = -1
+      else:
+        direction = 1
+      if self.output == ",".join(map(str, self.program)):
+        return a
+      step = step // 2
+      #a -= 1
 
 def read_input():
   registers, programs = split_at(fileinput.input(), is_blank)
@@ -113,6 +144,9 @@ def main():
 
   # part 1
   computer.run(verbose = False)
+
+  # part 2
+  print(computer.correct())
 
 if __name__ == "__main__":
   main()
