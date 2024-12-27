@@ -76,7 +76,7 @@ class Warehouse(dict):
     elif obstacle == ROBOT:
       raise ValueError
     elif obstacle in BOXES:
-      if not self.move(direction, nxt):
+      if not self.move(direction, nxt, tentative = tentative):
         return False
 
     # next position was (made) empty
