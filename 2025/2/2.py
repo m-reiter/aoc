@@ -2,8 +2,8 @@
 
 import fileinput
 
-def normalize(range):
-  first, last = range
+def normalize(interval):
+  first, last = interval
 
   if len(first) % 2 != 0:
     first = "1" + len(first)*"0"
@@ -32,11 +32,34 @@ def find_invalids(normalized):
 
   return invalids
 
+def find_invalids_2(interval):
+  first, last = interval
+
+  digits = len(first)
+  if len(last) > digits:
+    return find_invalids_2((first, "9"*digits)) | find_invalids_2(("1"+"0"*digits, last))
+
+  invalids = set()
+
+  for l in range(1, digits):
+    times, remainder = divmod(digits, l)
+    if remainder == 0:
+      for i in range(10**(l-1), 10**l):
+        candidate = int(str(i)*times)
+        if int(first) <= candidate <= int(last):
+          invalids.add(candidate)
+
+  return invalids
+
+
 def main():
-  ranges = [ range.split("-") for range in fileinput.input().readline().strip().split(",") ]
+  intervals = [ interval.split("-") for interval in fileinput.input().readline().strip().split(",") ]
 
   # part 1
-  print(sum(map(sum,map(find_invalids,map(normalize, ranges)))))
+  print(sum(map(sum,map(find_invalids,map(normalize, intervals)))))
+
+  # part 2
+  print(sum(map(sum,map(find_invalids_2, intervals))))
 
 if __name__ == "__main__":
   main()
