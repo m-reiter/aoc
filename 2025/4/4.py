@@ -6,6 +6,7 @@ from P import P
 
 PAPER_ROLL = "@"
 EMPTY = "."
+ACCESSIBLE = "x"
 
 class Grid(dict):
   def __init__(self, diagram):
@@ -17,28 +18,25 @@ class Grid(dict):
     self.size = P(x+1,y+1)
 
   def __str__(self):
-    return "\n".join(
-      "".join(EMPTY if self.is_empty(P(x,y)) else PAPER_ROLL for x in range(self.size.x))
-      for y in range(self.size.y)
-    )
+    return self.pretty(show_accessibles = False)
 
-  def show_accessibles(self):
+  def pretty(self, show_accessibles = True):
     accessibles = self.get_accessibles()
     return "\n".join(
-      "".join(EMPTY if self.is_empty(P(x,y)) else "x" if P(x,y) in accessibles else PAPER_ROLL for x in range(self.size.x))
+      "".join(
+        ACCESSIBLE if show_accessibles and P(x,y) in accessibles
+        else PAPER_ROLL if self.is_roll(P(x,y))
+        else EMPTY
+        for x in range(self.size.x)
+      )
       for y in range(self.size.y)
     )
-
-  def is_empty(self, position):
-    return self.get(position, None) is None
 
   def is_roll(self, position):
     return position in self.keys()
 
   def is_accessible(self, position):
-    if not self.is_roll(position):
-      return False
-    return sum(self.is_roll(n) for n in position.get_neighbors(borders = self.size-P(1,1))) < 4
+    return self.is_roll(position) and sum(self.is_roll(n) for n in position.get_neighbors(borders = self.size-P(1,1))) < 4
 
   def get_accessibles(self):
     return [ roll for roll in self.keys() if self.is_accessible(roll) ]
@@ -69,8 +67,8 @@ def main():
 
   while len(removables := grid.get_accessibles())  > 0:
     if verbose:
-      print(f"Remove {len(removables)} rolls of paper:")
-      print(grid.show_accessibles())
+      print(f"Remove {len(removables)} roll{'s' if len(removables) > 1 else ''} of paper:")
+      print(grid.pretty())
       print()
     grid.remove(removables)
     removed += len(removables)
