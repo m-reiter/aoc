@@ -8,12 +8,12 @@ PAPER_ROLL = "@"
 EMPTY = "."
 ACCESSIBLE = "x"
 
-class Grid(dict):
+class Grid(set):
   def __init__(self, diagram):
     for y, line in enumerate(diagram):
       for x, character in enumerate(line):
         if character == PAPER_ROLL:
-          self[P(x,y)] = PAPER_ROLL
+          self.add(P(x,y))
 
     self.size = P(x+1,y+1)
 
@@ -33,20 +33,20 @@ class Grid(dict):
     )
 
   def is_roll(self, position):
-    return position in self.keys()
+    return position in self
 
   def is_accessible(self, position):
     return self.is_roll(position) and sum(self.is_roll(n) for n in position.get_neighbors(borders = self.size-P(1,1))) < 4
 
   def get_accessibles(self):
-    return [ roll for roll in self.keys() if self.is_accessible(roll) ]
+    return [ roll for roll in self if self.is_accessible(roll) ]
 
   def count_accessibles(self):
     return len(self.get_accessibles())
 
-  def remove(self, positions):
+  def remove_rolls(self, positions):
     for p in positions:
-      del self[p]
+      self.remove(p)
 
 def main():
   grid = Grid(fileinput.input())
@@ -65,12 +65,12 @@ def main():
 
   removed = 0
 
-  while len(removables := grid.get_accessibles())  > 0:
+  while (n := len(removables := grid.get_accessibles()))  > 0:
     if verbose:
-      print(f"Remove {len(removables)} roll{'s' if len(removables) > 1 else ''} of paper:")
+      print(f"Remove {n} roll{'s' if n > 1 else ''} of paper:")
       print(grid.pretty())
       print()
-    grid.remove(removables)
+    grid.remove_rolls(removables)
     removed += len(removables)
 
   if verbose:
