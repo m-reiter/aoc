@@ -1,4 +1,5 @@
 from itertools import product
+from math import sqrt
 
 class P(tuple):
 
@@ -14,6 +15,12 @@ class P(tuple):
 
   def __repr__(self):
     return "P{}".format(super().__repr__())
+
+  def __abs__(self):
+    return sqrt(sum(x**2 for x in self))
+
+  def __neg__(self):
+    return self * -1
 
   def __add__(self, other):
 
