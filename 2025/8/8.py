@@ -17,13 +17,17 @@ class Junction(P):
   def __repr__(self):
     return f"<Junction{super(P, self).__repr__()}{f' in circuit {self.circuit.id}' if self.circuit else ''}>"
 
-  def connect(self, partner):
+  def connect(self, partner, circuits):
+    # connect to partner and keep track of circuits
     if c := self.circuit:
-      return c.add(partner)
+      empty_circuit = c.add(partner)
     elif c := partner.circuit:
-      return c.add(self)
+      empty_circuit = c.add(self)
     else:
-      Circuit(self, partner)
+      circuits.add(Circuit(self, partner))
+      empty_circuit = None
+    if empty_circuit is not None:
+      circuits.remove(empty_circuit)
 
 class Circuit:
   id_generator = count()
@@ -56,15 +60,6 @@ class Circuit:
       self.junctions.add(j)
     return c
 
-def connect(first, second, circuits):
-  empty_circuit = first.connect(second)
-  if empty_circuit is None:
-    # new circuit was created
-    circuits.add(first.circuit)
-  else:
-    # connect returns empty circuit of 2 circuits are fused
-    circuits.remove(empty_circuit)
-  
 def main():
   junctions = [ Junction(*map(int, line.split(','))) for line in fileinput.input() ]
 
@@ -74,13 +69,13 @@ def main():
   n_connections = 10 if len(junctions) < 100 else 1000 # distinguish sample data from real input
   circuits = set()
   for _, first, second in distances[:n_connections]:
-    connect(first, second, circuits)
+    first.connect(second, circuits)
 
   print(reduce(mul, sorted((len(c) for c in circuits), reverse = True)[:3]))
 
   # part 2
   for _, first, second in distances[n_connections:]:
-    connect(first, second, circuits)
+    first.connect(second, circuits)
     if len(circuits) == 1:
       if len(c := circuits.pop()) == len(junctions):
         # all junctions are in one single circuit
