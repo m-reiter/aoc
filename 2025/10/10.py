@@ -34,21 +34,34 @@ class Button:
   def effect(self, reference, presses = 1):
     return P(*(presses if joltage in self.wiring else 0 for joltage, _ in enumerate(reference)))
 
-def possible_presses(n_presses, max_presses):
+def possible_presses(n_presses, max_presses, buttons, target):
+  button = buttons[0]
   if len(max_presses) == 1:
     if n_presses <= max_presses[0]:
-      yield (n_presses, )
+      if target - button.effect(target, n_presses) == (0, ) * len(target):
+        yield (n_presses, )
+  elif n_presses < max(target):
+    return
   else:
     for presses in range(min(n_presses, max_presses[0]) + 1):
-      for further_presses in possible_presses(n_presses - presses, max_presses[1:]):
-        yield (presses, ) + further_presses
+      new_target = target - button.effect(target, presses)
+      if min(new_target) < 0:
+        return
+      #elif all(x == 0 for x in new_target):
+      elif sum(new_target) == 0:
+        yield (presses, ) + (0, ) * (len(buttons) - 1)
+      #elif any(x < 0 for x in target):
+      #  return
+      else:
+        for further_presses in possible_presses(n_presses - presses, max_presses[1:], buttons[1:], new_target):
+          yield (presses, ) + further_presses
 
 class Machine:
   def __init__(self, line):
     diagram, *schematics, joltages = line.strip().split()
     self.indicators = Indicators(diagram)
     self.buttons = [ Button(schematic) for schematic in schematics ]
-    self.joltages = tuple(map(int, joltages[1:-1].split(',')))
+    self.joltages = P(*map(int, joltages[1:-1].split(',')))
 
   def __str__(self):
     return f"{str(self.indicators)} {' '.join(map(str, self.buttons))} {{{','.join(map(str, self.joltages))}}}"
@@ -68,7 +81,9 @@ class Machine:
     n_presses = max(self.joltages)
     while True:
       print(self, n_presses)
-      for combination in possible_presses(n_presses, max_presses):
+      for combination in possible_presses(n_presses, max_presses, self.buttons, self.joltages):
+        print(combination)
+        return n_presses
         outcome = tuple(sum(button.effect(self.indicators.target, presses) for button, presses in zip(self.buttons, combination)))
         if outcome == self.joltages:
           print("***", n_presses)
