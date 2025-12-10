@@ -23,15 +23,18 @@ class P(tuple):
     return self * -1
 
   def __add__(self, other):
-
     return P(*(s + o for s,o in zip(self, other)))
 
-  def __sub__(self, other):
+  def __radd__(self, other):
+    if other == 0: # needed for sum() to work
+      return self
+    else:
+      return self.__add__(other)
 
+  def __sub__(self, other):
     return P(*(s - o for s,o in zip(self, other)))
 
   def __mul__(self, integer):
-
     return P(*(s * integer for s in self))
 
   __rmul__ = __mul__
